@@ -7,10 +7,12 @@ import 'package:get_storage/get_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'Product_BL.dart';
+import 'database_helper.dart';
 import 'model.dart';
 
 class ProductBody extends StatefulWidget {
-  const ProductBody({Key? key}) : super(key: key);
+  ProductBody({Key? key}) : super(key: key);
+  final dbHelper = DatabaseHelper.instance;
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -19,29 +21,47 @@ class ProductBody extends StatefulWidget {
 class _HomePageState extends State<ProductBody> {
   final List<ProductModel> _products = [];
   final ScrollController _scrollController = ScrollController();
-  final box = GetStorage();
+  // final box = GetStorage();
+  final dbHelper = DatabaseHelper.instance;
+
+  var data = [];
+
+  @override
+  initState() {
+    // TODO: implement initState
+    query();
+    super.initState();
+  }
+
+  Future query() async {
+    final allRows = await dbHelper.queryAllRows();
+    // print(allRows);
+    setState(() {
+      data = allRows;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    query();
     return Center(
       child: BlocListener<ProductBloc, ProductState>(
-        listener: (context, productState) {
-          if (productState is ProductLoadingState) {
-            Scaffold.of(context)
-                .showSnackBar(SnackBar(content: Text(productState.message)));
-          } else if (productState is ProductSuccessState &&
-              productState.products.isEmpty) {
-            Scaffold.of(context)
-                .showSnackBar(SnackBar(content: Text('No more Products')));
-          } else if (productState is ProductErrorState) {
-            Scaffold.of(context)
-                .showSnackBar(SnackBar(content: Text(productState.error)));
-            context.bloc<ProductBloc>().isFetching = false;
-          }
-          return;
-        },
-    child: BlocBuilder<ProductBloc, ProductState>(
-    builder: (context, productState) {
+          listener: (context, productState) {
+        if (productState is ProductLoadingState) {
+          Scaffold.of(context)
+              .showSnackBar(SnackBar(content: Text(productState.message)));
+        } else if (productState is ProductSuccessState &&
+            productState.products.isEmpty) {
+          Scaffold.of(context)
+              .showSnackBar(SnackBar(content: Text('No more Products')));
+        } else if (productState is ProductErrorState) {
+          Scaffold.of(context)
+              .showSnackBar(SnackBar(content: Text(productState.error)));
+          context.bloc<ProductBloc>().isFetching = false;
+        }
+        return;
+      }, child: BlocBuilder<ProductBloc, ProductState>(
+        builder: (context, productState) {
           if (productState is ProductInitialState ||
               productState is ProductLoadingState && _products.isEmpty) {
             return CircularProgressIndicator();
@@ -88,7 +108,9 @@ class _HomePageState extends State<ProductBody> {
                     mainAxisSpacing: 15),
                 itemCount: _products.length,
                 itemBuilder: (BuildContext ctx, index) {
-                  var data = box.read("${_products[index].id}");
+                  var item = data.where(((element) => element["id"].toString() ==  _products[index].id.toString()));
+                  //                   var data = box.read("${_products[index].id}");
+
                   return Card(
                     elevation: 3,
                     shape: RoundedRectangleBorder(
@@ -132,15 +154,14 @@ class _HomePageState extends State<ProductBody> {
                               IconButton(
                                 key: Key('icon_${_products[index].id}'),
                                 // icon:  Icon(Icons.shopping_cart_outlined),
-                                icon: data != null
-                                        ? Icon(Icons.shopping_cart)
-                                        : Icon(Icons.shopping_cart_outlined),
+                                icon: item.length > 0
+                                    ? Icon(Icons.shopping_cart)
+                                    : Icon(Icons.shopping_cart_outlined),
                                 onPressed: () {
                                   setState(() {
-                                    BlocProvider.of<ProductBloc>(context)
+                                     BlocProvider.of<ProductBloc>(context)
                                         .addLocal(_products[index]);
                                   });
-
                                 },
                               )
                             ],
@@ -167,8 +188,7 @@ class _HomePageState extends State<ProductBody> {
           //   itemCount: _products.length,
           // );
         },
-    )
-      ),
+      )),
     );
   }
 }

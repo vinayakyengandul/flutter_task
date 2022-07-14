@@ -8,6 +8,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 
 import 'Product_BL.dart';
+import 'database_helper.dart';
 import 'model.dart';
 
 class ProductBloc extends Bloc<ProductEvent, ProductState> {
@@ -15,6 +16,7 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   int page = 1;
   bool isFetching = false;
   final box = GetStorage();
+  final dbHelper = DatabaseHelper.instance;
 
   ProductBloc({
     required this.productRepository,
@@ -42,10 +44,26 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
     }
   }
 
-  void addLocal(dynamic _products) async {
-    var data = box.read(_products.id.toString());
-    data == null
-        ? box.write(_products.id.toString(), _products)
-        : box.remove(_products.id.toString());
+  void addLocal(ProductModel _products) async {
+    final allRows = await dbHelper.queryAllRows();
+    var selected =
+        allRows.where((element) => element["id"] == _products.id).toList();
+    if (selected.isEmpty) {
+      Map<String, dynamic> row = {
+        DatabaseHelper.columnId: _products.id,
+        DatabaseHelper.columnTitle: _products.title,
+        DatabaseHelper.columnSlug: _products.slug,
+        DatabaseHelper.columnDescription: _products.description,
+        DatabaseHelper.columnPrice: _products.price,
+        DatabaseHelper.columnImg: _products.featuredImage,
+        DatabaseHelper.columnStatus: _products.status,
+        DatabaseHelper.columnCreatedAt: _products.createdAt.toString(),
+      };
+      final id = await dbHelper.insert(row);
+      print('inserted row id: $id');
+    } else {
+      final rowsDeleted = await dbHelper.delete(selected[0]["id"]);
+      print('deleted $rowsDeleted row(s): row ${selected[0]["id"]}');
+    }
   }
 }

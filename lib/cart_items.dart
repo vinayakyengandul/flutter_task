@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'card_BL.dart';
 import 'card_block.dart';
 import 'card_state.dart';
+import 'database_helper.dart';
 import 'model.dart';
 
 class ShoppingCart extends StatefulWidget {
@@ -15,9 +16,36 @@ class ShoppingCart extends StatefulWidget {
 
 class _ShoppingCartState extends State<ShoppingCart> {
   List<ProductModel>? cartItems;
-  var box = GetStorage();
+  // var box = GetStorage();
+  final dbHelper = DatabaseHelper.instance;
 
   double totalAmount = 0;
+
+  var data = [];
+
+  @override
+  initState() {
+    // TODO: implement initState
+    query();
+    super.initState();
+  }
+
+  Future query() async {
+    final allRows = await dbHelper.queryAllRows();
+    setState(() {
+      data = allRows;
+    });
+  }
+
+  Future delete(id) async {
+    final rowsDeleted = await dbHelper.delete(id);
+    print(rowsDeleted);
+    // final allRows = await dbHelper.queryAllRows();
+    // setState(() {
+    //   data = allRows;
+    // });
+  }
+
   void calculateTotalAmount(List<ProductModel> list) {
     double res = 0;
 
@@ -99,17 +127,30 @@ class _ShoppingCartState extends State<ShoppingCart> {
                 children: [
                   Column(
                     children: [
-                      Text('Total Items',style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),),
-                      Text('${cartItems?.toList().length}',style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white)),
+                      Text(
+                        'Total Items',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      Text('${cartItems?.toList().length}',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)),
                     ],
                   ),
                   Column(
                     children: [
-                      Text('Grand Total',style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),),
-                      Text('\$${totalAmount.toStringAsFixed(2)}',style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white)),
+                      Text(
+                        'Grand Total',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      Text('\$${totalAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)),
                     ],
                   ),
-
                 ],
               ),
             ),
@@ -117,141 +158,143 @@ class _ShoppingCartState extends State<ShoppingCart> {
           body: cartItems == null || cartItems!.length == 0
               ? Center(child: Text('Your Cart is Empty'))
               : ListView.builder(
-            itemCount: cartItems!.length,
-            itemBuilder: (BuildContext context, int index) {
-              return Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: Container(
-                  height: 120,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Image.network(
-                              cartItems![index].featuredImage!,
-                              height: 64,
-                              width: 64,
-                            ),
-                            SizedBox(width: 20),
-                            Text(cartItems![index].title!),
-                            Spacer(),
-                            IconButton(
-                              icon: Icon(Icons.cancel),
-                              onPressed: () {
-                                print("cartItems![index].id.toString()");
-                                print(cartItems![index].id.toString());
-                                setState(() {
-                                  if (state is ShopPageLoadedState) {
-                                     box.remove(cartItems![index].id.toString());
-                                    state.cartData
-                                        .removeAt(index);
-                                        state.shopData.removeAt(index);
-                                    calculateTotalAmount(cartItems!);
-                                    BlocProvider.of<ShopBloc>(context)
-                                      ..add(ItemDeleteCartEvent(
-                                          cartItems: state.shopData
-                                      ));
-                                  } else if (state
-                                  is ItemAddedCartState) {
-                                    print("2");
-                                     box.remove(cartItems![index].id.toString());
-
-                                    state.cartItems.removeAt(index);
-                                    calculateTotalAmount(cartItems!);
-
-                                    BlocProvider.of<ShopBloc>(context)
-                                      ..add(ItemDeleteCartEvent(
-                                          cartItems: state.cartItems));
-                                  } else if (state
-                                  is ItemDeletingCartState) {
-                                    print("3");
-                                     box.remove(cartItems![index].id.toString());
-
-                                    state.cartItems.removeAt(index);
-                                    calculateTotalAmount(cartItems!);
-
-                                    BlocProvider.of<ShopBloc>(context)
-                                      ..add(ItemDeleteCartEvent(
-                                          cartItems: state.cartItems));
-                                  }
-                                 
-                                });
-                              },
-                            ),
-                          ],
+                  itemCount: cartItems!.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    print("cartItems![index].featuredImage.toString()");
+                    print(cartItems![0].featuredImage);
+                    return Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Container(
+                        height: 120,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        SizedBox(height: 10),
-                        Row(
-                          children: [
-                            SizedBox(width: 80),
-                            Text("Price : ",style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text("\$" +cartItems![index].price.toString()),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        Row(
-                          children: [
-                            SizedBox(width: 80),
-                            Text("Quantity : ",style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text(1.toString()),
-                          ],
-                        )
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Image.network(
+                                    cartItems![index].featuredImage.toString(),
+                                    height: 64,
+                                    width: 64,
+                                  ),
+                                  SizedBox(width: 20),
+                                  Text(cartItems![index].title!),
+                                  Spacer(),
+                                  IconButton(
+                                    icon: Icon(Icons.cancel),
+                                    onPressed: () async {
+                                      await delete(cartItems![index].id);
 
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.start,
-                        //   children: [
-                        //     IconButton(
-                        //       icon: Icon(Icons.remove),
-                        //       onPressed: () {
-                        //         if (cartItems![index].! > 0)
-                        //           setState(() {
-                        //             calculateTotalAmount(cartItems!);
-                        //             cartItems![index].quantity! - 1;
-                        //           });
-                        //       },
-                        //     ),
-                        //     SizedBox(
-                        //       height: 20,
-                        //       width: 30,
-                        //       child: Container(
-                        //         alignment: Alignment.center,
-                        //         decoration: BoxDecoration(
-                        //             border: Border.all(
-                        //                 color: Colors.black, width: 0.5)),
-                        //         child: Text(
-                        //           cartItems![index].quantity.toString(),
-                        //           textAlign: TextAlign.center,
-                        //         ),
-                        //       ),
-                        //     ),
-                        //     IconButton(
-                        //       icon: Icon(Icons.add),
-                        //       onPressed: () {
-                        //         setState(() {
-                        //           calculateTotalAmount(cartItems!);
-                        //           cartItems![index].quantity! + 1;
-                        //         });
-                        //       },
-                        //     ),
-                        //     Spacer(),
-                        //     Text(
-                        //         '\$${cartItems![index].price! * cartItems![index].quantity!} ')
-                        //   ],
-                        // ),
-                      ],
-                    ),
-                  ),
+                                      setState(() {
+                                        if (state is ShopPageLoadedState) {
+                                          // box.remove(
+                                          //     cartItems![index].id.toString());
+                                          state.cartData.removeAt(index);
+                                          state.shopData.removeAt(index);
+                                          calculateTotalAmount(cartItems!);
+                                          BlocProvider.of<ShopBloc>(context)
+                                            ..add(ItemDeleteCartEvent(
+                                                cartItems: state.shopData));
+                                        } else if (state
+                                            is ItemAddedCartState) {
+
+
+                                          state.cartItems.removeAt(index);
+                                          calculateTotalAmount(cartItems!);
+
+                                          BlocProvider.of<ShopBloc>(context)
+                                            ..add(ItemDeleteCartEvent(
+                                                cartItems: state.cartItems));
+                                        } else if (state
+                                            is ItemDeletingCartState) {
+
+                                          state.cartItems.removeAt(index);
+                                          calculateTotalAmount(cartItems!);
+
+                                          BlocProvider.of<ShopBloc>(context)
+                                            ..add(ItemDeleteCartEvent(
+                                                cartItems: state.cartItems));
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  SizedBox(width: 80),
+                                  Text("Price : ",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  Text("\$" +
+                                      cartItems![index].price.toString()),
+                                ],
+                              ),
+                              SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  SizedBox(width: 80),
+                                  Text("Quantity : ",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  Text(1.toString()),
+                                ],
+                              )
+
+                              // Row(
+                              //   mainAxisAlignment: MainAxisAlignment.start,
+                              //   children: [
+                              //     IconButton(
+                              //       icon: Icon(Icons.remove),
+                              //       onPressed: () {
+                              //         if (cartItems![index].! > 0)
+                              //           setState(() {
+                              //             calculateTotalAmount(cartItems!);
+                              //             cartItems![index].quantity! - 1;
+                              //           });
+                              //       },
+                              //     ),
+                              //     SizedBox(
+                              //       height: 20,
+                              //       width: 30,
+                              //       child: Container(
+                              //         alignment: Alignment.center,
+                              //         decoration: BoxDecoration(
+                              //             border: Border.all(
+                              //                 color: Colors.black, width: 0.5)),
+                              //         child: Text(
+                              //           cartItems![index].quantity.toString(),
+                              //           textAlign: TextAlign.center,
+                              //         ),
+                              //       ),
+                              //     ),
+                              //     IconButton(
+                              //       icon: Icon(Icons.add),
+                              //       onPressed: () {
+                              //         setState(() {
+                              //           calculateTotalAmount(cartItems!);
+                              //           cartItems![index].quantity! + 1;
+                              //         });
+                              //       },
+                              //     ),
+                              //     Spacer(),
+                              //     Text(
+                              //         '\$${cartItems![index].price! * cartItems![index].quantity!} ')
+                              //   ],
+                              // ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         );
       },
     );

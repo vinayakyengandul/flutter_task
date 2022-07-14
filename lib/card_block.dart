@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import 'card_BL.dart';
 import 'card_state.dart';
+import 'database_helper.dart';
 import 'model.dart';
 
 class ShopBloc extends Bloc<ShopEvent, ShopState> {
@@ -16,18 +17,21 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
   ShopBloc() : super(ShopInitial()) {
     add(ShopPageInitializedEvent());
   }
+  final dbHelper = DatabaseHelper.instance;
 
-  final box = GetStorage();
+  // final box = GetStorage();
 
 //
   @override
   Stream<ShopState> mapEventToState(
-      ShopEvent event,
-      ) async* {
+    ShopEvent event,
+  ) async* {
     if (event is ShopPageInitializedEvent) {
-      print(box.listenable.value!.values.toList());
-      List<ProductModel> shopData = box.listenable.value!.values.toList().cast<ProductModel>().toList();
-      List<ProductModel> cartData = box.listenable.value!.values.cast<ProductModel>().toList();
+      final allRows = await dbHelper.queryAllRows();
+      List<ProductModel> shopData =
+          allRows.map((e) => ProductModel.fromJson(e,i:1)).toList();
+      List<ProductModel> cartData =
+          allRows.map((e) => ProductModel.fromJson(e,i: 1)).toList();
       yield ShopPageLoadedState(shopData: shopData, cartData: cartData);
     }
     if (event is ItemAddingCartEvent) {

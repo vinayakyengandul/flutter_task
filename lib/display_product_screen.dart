@@ -11,14 +11,31 @@ import 'card_BL.dart';
 import 'card_block.dart';
 import 'card_state.dart';
 import 'cart_items.dart';
+import 'database_helper.dart';
 
 class DisplayProductScreen extends StatefulWidget {
-
   @override
   State<DisplayProductScreen> createState() => _DisplayProductScreenState();
 }
 
 class _DisplayProductScreenState extends State<DisplayProductScreen> {
+  final dbHelper = DatabaseHelper.instance;
+  var data = [];
+
+  @override
+   initState() {
+    // TODO: implement initState
+    query();
+    super.initState();
+  }
+
+ Future query() async {
+    final allRows = await dbHelper.queryAllRows();
+    setState(() {
+        data = allRows;
+      });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -52,23 +69,20 @@ class _DisplayProductScreenState extends State<DisplayProductScreen> {
                   ),
                 ),
                 BlocBuilder<ProductBloc, ProductState>(builder: (_, cartState) {
-                  // List<int> cartItem = cartState.;
-                  final box = GetStorage();
                   return Positioned(
-                  left: 30,
-                  child: Container(
-                    padding: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.red),
-                    child: Text(
-                      // '${context.}',
-                      '${box.listenable.value?.length}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    left: 30,
+                    child: Container(
+                      padding: EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.red),
+                      child: Text(
+                        // '${context.}',
+                        '${data.length.toString()}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
-                );
-
+                  );
                 }),
               ],
             ),
